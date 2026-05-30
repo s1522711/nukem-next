@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      DATABASE_URL: file:/data/prod.db
+      # Generate a strong random value: openssl rand -hex 32
+      SESSION_SECRET: change-me-in-production
+      SECURE_COOKIES: "true"
+    volumes:
+      - db_data:/data
+
+volumes:
+  db_data:
