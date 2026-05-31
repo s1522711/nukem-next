@@ -3,7 +3,6 @@
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/session'
 import { redirect } from 'next/navigation'
-import { headers } from 'next/headers'
 
 export async function processCheckout(formData: FormData) {
   const session = await getSession()
@@ -60,12 +59,7 @@ export async function processCheckout(formData: FormData) {
     }
   })
 
-  const headersList = await headers()
-  const userAgent = headersList.get('user-agent') || ''
-  const ua = userAgent.toLowerCase()
-  const isSafari = ua.includes('safari') && !ua.includes('chrome') && !ua.includes('chromium') && !ua.includes('android')
-
-  if ((item.itemCode === 'TsarBomba' || item.itemCode === 'LittleBoy') && !isSafari) {
+  if (item.itemCode === 'TsarBomba' || item.itemCode === 'LittleBoy') {
     redirect(`/checkout/launch?orderId=${order.id}`)
   } else {
     redirect(`/checkout/confirmed?orderId=${order.id}`)

@@ -9,6 +9,7 @@ export function MissileSim({ orderId, itemName }: { orderId: number, itemName: s
   const [targetCoords, setTargetCoords] = useState<{x: number, y: number} | null>(null)
   const [activeSub, setActiveSub] = useState<{id: number, x: number, y: number} | null>(null)
   const [phase, setPhase] = useState<'AWAITING' | 'LAUNCHED' | 'IMPACT' | 'DESTROYED'>('AWAITING')
+  const [altitude, setAltitude] = useState(0)
 
   // Valid submarine fleet locations globally deployed
   const subFleet = [
@@ -99,7 +100,29 @@ export function MissileSim({ orderId, itemName }: { orderId: number, itemName: s
 
   // Animation Sequence
   useEffect(() => {
+    let animationFrameId: number
+    let startTime: number | null = null
+
     if (phase === 'LAUNCHED') {
+      const MAX_ALTITUDE = 1200 // km
+      const FLIGHT_TIME = 8000 // ms
+      const startTime = performance.now()
+
+      const updateAltitude = () => {
+        const elapsed = performance.now() - startTime
+
+        if (elapsed < FLIGHT_TIME) {
+          const t = elapsed / FLIGHT_TIME
+          const alt = 4 * MAX_ALTITUDE * t * (1 - t)
+          setAltitude(alt)
+          animationFrameId = requestAnimationFrame(updateAltitude)
+        } else {
+          setAltitude(0)
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(updateAltitude)
+
       const timer = setTimeout(() => {
         setPhase('IMPACT')
         
@@ -107,9 +130,12 @@ export function MissileSim({ orderId, itemName }: { orderId: number, itemName: s
           setPhase('DESTROYED')
         }, 3000)
         
-      }, 3000) // 3 seconds flight time
+      }, FLIGHT_TIME)
       
-      return () => clearTimeout(timer)
+      return () => {
+        clearTimeout(timer)
+        cancelAnimationFrame(animationFrameId)
+      }
     }
   }, [phase])
 
@@ -191,7 +217,7 @@ export function MissileSim({ orderId, itemName }: { orderId: number, itemName: s
             {/* Animated Payload */}
             <circle cx="0" cy="0" r="4" fill="#ef4444" filter="drop-shadow(0 0 4px #ef4444)">
               <animateMotion 
-                dur="3s" 
+                dur="8s" 
                 repeatCount="1" 
                 path={`M ${activeSub.x} ${activeSub.y} Q ${(activeSub.x + targetCoords.x) / 2} ${(activeSub.y + targetCoords.y) / 2 - 200} ${targetCoords.x} ${targetCoords.y}`}
                 fill="freeze"
@@ -216,7 +242,7 @@ export function MissileSim({ orderId, itemName }: { orderId: number, itemName: s
       </svg>
 
       {/* UI Overlay */}
-      <div className="absolute top-4 right-4 pointer-events-none">
+      <div className="absolute top-4 right-4 pointer-events-none z-30">
         <div className="bg-obsidian/80 border border-cyan-glow p-4 backdrop-blur-md">
           <div className="text-cyan-glow font-mono text-sm mb-2 flex justify-between gap-8">
             <span>ORD_ID:</span>
@@ -235,8 +261,48 @@ export function MissileSim({ orderId, itemName }: { orderId: number, itemName: s
         </div>
       </div>
 
+      {/* Live Altitude Ribbon */}
+      {(phase === 'LAUNCHED' || phase === 'IMPACT') && (
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 h-[200px] md:h-[300px] flex flex-col z-30 pointer-events-none">
+          <div className="text-[10px] text-cyan-glow font-mono font-bold mb-2 tracking-widest text-shadow-cyan">ALT</div>
+          <div className="relative flex-grow w-2 border-l border-cyan-glow/30">
+            {/* Ticks and Static Labels */}
+            <div className="absolute left-0 top-0 w-2 h-px bg-cyan-glow/50">
+              <span className="absolute left-3 -top-[6px] text-[8px] text-cyan-glow/70 font-mono">1200</span>
+            </div>
+            <div className="absolute left-0 top-1/4 w-1 h-px bg-cyan-glow/30">
+              <span className="absolute left-2 -top-[6px] text-[8px] text-cyan-glow/50 font-mono">900</span>
+            </div>
+            <div className="absolute left-0 top-1/2 w-2 h-px bg-cyan-glow/50">
+              <span className="absolute left-3 -top-[6px] text-[8px] text-cyan-glow/70 font-mono">600</span>
+            </div>
+            <div className="absolute left-0 top-3/4 w-1 h-px bg-cyan-glow/30">
+              <span className="absolute left-2 -top-[6px] text-[8px] text-cyan-glow/50 font-mono">300</span>
+            </div>
+            <div className="absolute left-0 bottom-0 w-2 h-px bg-cyan-glow/50">
+              <span className="absolute left-3 -top-[6px] text-[8px] text-cyan-glow/70 font-mono">0</span>
+            </div>
+            
+            {/* Fill Bar & Floating Live Readout */}
+            <div 
+              className="absolute bottom-0 left-0 w-full bg-crimson/80 shadow-[0_0_10px_rgba(255,0,0,0.5)]"
+              style={{ height: `${(altitude / 1200) * 100}%` }}
+            >
+              {/* Tracker Head */}
+              <div className="absolute top-0 left-0 w-4 h-px bg-white shadow-[0_0_5px_#fff]">
+                {/* Floating Value */}
+                <span className="absolute left-10 -top-[9px] text-[10px] text-crimson font-mono font-bold whitespace-nowrap bg-obsidian-light/90 px-1.5 py-0.5 border border-crimson/50 shadow-[0_0_10px_rgba(255,0,0,0.2)] flex items-center gap-1">
+                  <span className="w-1 h-1 bg-crimson rounded-full animate-pulse-fast"></span>
+                  {Math.round(altitude)} km
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {phase === 'AWAITING' && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
           <div className="bg-obsidian-light/90 border border-crimson p-6 text-center shadow-[0_0_30px_rgba(255,0,0,0.2)] animate-pulse">
             <h2 className="text-2xl font-bold text-crimson tracking-[0.2em] mb-2">SELECT TARGET COORDINATES</h2>
             <p className="text-slate-300 font-mono text-sm">Click anywhere on the tactical grid to authorize strike.</p>
