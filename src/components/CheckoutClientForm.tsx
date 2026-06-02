@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { processCheckout } from '@/app/actions/checkout'
+import { useRouter } from 'next/navigation'
 import { useCart } from './CartProvider'
-import { SubmitButton } from './SubmitButton'
 
 const COUNTRIES = [
   { code: 'AF', name: 'Afghanistan' }, { code: 'AL', name: 'Albania' }, { code: 'DZ', name: 'Algeria' },
@@ -74,50 +73,13 @@ const COUNTRIES = [
 ]
 
 export function CheckoutClientForm() {
-  const [ccNumber, setCcNumber] = useState('')
-  const [ccExp, setCcExp] = useState('')
-  const [cardType, setCardType] = useState<string | null>(null)
-
-  const handleCcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value.replace(/\D/g, '')
-    
-    // Detect Card Type
-    let type = null
-    if (val.startsWith('4')) type = 'Visa'
-    else if (/^5[1-5]/.test(val)) type = 'Mastercard'
-    else if (/^3[47]/.test(val)) type = 'Amex'
-    else if (/^6(?:011|5)/.test(val)) type = 'Discover'
-    setCardType(type)
-
-    // Format (Amex is 4-6-5, others 4-4-4-4)
-    if (type === 'Amex') {
-      val = val.substring(0, 15)
-      const parts = []
-      if (val.length > 0) parts.push(val.substring(0, 4))
-      if (val.length > 4) parts.push(val.substring(4, 10))
-      if (val.length > 10) parts.push(val.substring(10, 15))
-      setCcNumber(parts.join(' '))
-    } else {
-      val = val.substring(0, 16)
-      const parts = []
-      for (let i = 0; i < val.length; i += 4) {
-        parts.push(val.substring(i, i + 4))
-      }
-      setCcNumber(parts.join(' '))
-    }
-  }
-
-  const handleExpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value.replace(/\D/g, '').substring(0, 4)
-    if (val.length >= 3) {
-      val = val.substring(0, 2) + ' / ' + val.substring(2, 4)
-    }
-    setCcExp(val)
-  }
-
+  const router = useRouter()
   const { items, totalPrice, subtotal, shippingFee } = useCart()
   const [mounted, setMounted] = useState(false)
-  
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'crypto' | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -131,98 +93,172 @@ export function CheckoutClientForm() {
     )
   }
 
+  const handleProceed = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    
+    const formData = new FormData(e.currentTarget)
+    const firstName = formData.get('firstName') as string
+    const lastName = formData.get('lastName') as string
+    const email = formData.get('email') as string
+    const country = formData.get('country') as string
+    const address = formData.get('address') as string
+    const zip = formData.get('zip') as string
+
+    if (!firstName || firstName.length < 3 || firstName.length > 50) {
+      setError('Invalid first name (must be 3-50 characters).')
+      return
+    }
+    if (!lastName || lastName.length < 3 || lastName.length > 50) {
+      setError('Invalid last name (must be 3-50 characters).')
+      return
+    }
+    if (!email || email.length < 3 || email.length > 50 || !email.includes('@') || !email.includes('.')) {
+      setError('Invalid email address.')
+      return
+    }
+    
+    const bannedCountries = ['FR', 'GF', 'PF', 'TF', 'DE', 'GI', 'IL', 'PT', 'ES', 'GB']
+    if (bannedCountries.includes(country)) {
+      setError('Shipping to this country is banned by company policy.')
+      return
+    }
+    
+    if (!address || address.length < 3 || address.length > 50) {
+      setError('Invalid address (must be 3-50 characters).')
+      return
+    }
+    if (!zip || zip.length < 3 || zip.length > 50) {
+      setError('Invalid zip code (must be 3-50 characters).')
+      return
+    }
+
+    if (!paymentMethod) {
+      setError('PLEASE SELECT A PAYMENT DESIGNATION TO PROCEED.')
+      return
+    }
+
+    setError(null)
+    setIsProcessing(true)
+    
+    const billingData = {
+      firstName,
+      lastName,
+      email,
+      country,
+      address,
+      zip,
+      paymentMethod
+    }
+    
+    sessionStorage.setItem('nukem_billing', JSON.stringify(billingData))
+    
+    await new Promise(r => setTimeout(r, 600))
+    router.push('/checkout/payment')
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
       <div className="lg:col-span-2 order-2 lg:order-1">
-        <form action={processCheckout} className="space-y-6">
-          <input type="hidden" name="cartItems" value={JSON.stringify(items)} />
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">First Name</label>
-          <input name="firstName" required className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan" />
-        </div>
-        <div>
-          <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Last Name</label>
-          <input name="lastName" required className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan" />
-        </div>
-      </div>
+        {error && (
+          <div className="mb-6 p-4 bg-crimson-dim border border-crimson text-crimson font-mono text-sm uppercase tracking-wider box-shadow-crimson animate-pulse">
+            [VALIDATION_ERROR] {error}
+          </div>
+        )}
+        <form onSubmit={handleProceed} className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">First Name</label>
+              <input name="firstName" required className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Last Name</label>
+              <input name="lastName" required className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan" />
+            </div>
+          </div>
 
-      <div>
-        <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Comm Link (Email)</label>
-        <input name="email" type="email" required className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan" />
-      </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Comm Link (Email)</label>
+            <input name="email" type="email" required className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan" />
+          </div>
 
-      <div>
-        <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Destination Region</label>
-        <select name="country" required className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan">
-          <option value="">Select Territory...</option>
-          {COUNTRIES.map(c => (
-            <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
-          ))}
-        </select>
-      </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Destination Region</label>
+            <select name="country" required className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan">
+              <option value="">Select Territory...</option>
+              {COUNTRIES.map(c => (
+                <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
+              ))}
+            </select>
+          </div>
 
-      <div>
-        <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Drop Coordinates (Address)</label>
-        <input name="address" required className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan" />
-      </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Drop Coordinates (Address)</label>
+            <input name="address" required className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan" />
+          </div>
 
-      <div>
-        <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Sector Code (ZIP)</label>
-        <input name="zip" required className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan" />
-      </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Sector Code (ZIP)</label>
+            <input name="zip" required className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan" />
+          </div>
 
-      <div className="w-full h-px bg-gradient-to-r from-transparent via-cyan-glow/50 to-transparent my-10"></div>
-      
-      <div className="flex items-center gap-3 mb-6">
-        <span className="w-2 h-2 bg-crimson animate-pulse-fast box-shadow-crimson"></span>
-        <h3 className="text-xl font-bold text-slate-100 tracking-widest uppercase">Payment Authorization</h3>
-      </div>
+          <div className="w-full h-px bg-gradient-to-r from-transparent via-cyan-glow/50 to-transparent my-10"></div>
+          
+          <div className="flex items-center gap-3 mb-6">
+            <span className="w-2 h-2 bg-crimson animate-pulse-fast box-shadow-crimson"></span>
+            <h3 className="text-xl font-bold text-slate-100 tracking-widest uppercase">Payment Designation</h3>
+          </div>
 
-      <div>
-        <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Cardholder Designation</label>
-        <input name="cc-name" required className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan" />
-      </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button 
+              type="button"
+              onClick={() => setPaymentMethod('credit_card')}
+              className={`p-4 border transition-all duration-300 flex flex-col items-start gap-2 ${paymentMethod === 'credit_card' ? 'border-cyan-glow bg-cyan-glow/10 box-shadow-cyan' : 'border-obsidian-border bg-obsidian hover:border-cyan-glow/50'}`}
+            >
+              <div className="flex justify-between items-center w-full">
+                <span className="font-bold text-slate-100 uppercase tracking-widest">Credit Card</span>
+                <div className={`w-4 h-4 rounded-full border ${paymentMethod === 'credit_card' ? 'border-cyan-glow flex items-center justify-center' : 'border-slate-500'}`}>
+                  {paymentMethod === 'credit_card' && <div className="w-2 h-2 bg-cyan-glow rounded-full"></div>}
+                </div>
+              </div>
+            </button>
+            
+            <button 
+              type="button"
+              onClick={() => setPaymentMethod('crypto')}
+              className={`p-4 border transition-all duration-300 flex flex-col items-start gap-2 ${paymentMethod === 'crypto' ? 'border-cyan-glow bg-cyan-glow/10 box-shadow-cyan' : 'border-obsidian-border bg-obsidian hover:border-cyan-glow/50'}`}
+            >
+              <div className="flex justify-between items-center w-full">
+                <span className="font-bold text-slate-100 uppercase tracking-widest">Crypto (Nukecoin)</span>
+                <div className={`w-4 h-4 rounded-full border ${paymentMethod === 'crypto' ? 'border-cyan-glow flex items-center justify-center' : 'border-slate-500'}`}>
+                  {paymentMethod === 'crypto' && <div className="w-2 h-2 bg-cyan-glow rounded-full"></div>}
+                </div>
+              </div>
+            </button>
+          </div>
 
-      <div>
-        <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest flex justify-between">
-          <span>Authorization Sequence</span>
-          {cardType && <span className="text-cyan-glow font-mono bg-cyan-glow/10 px-2 rounded-sm border border-cyan-glow/50">{cardType}</span>}
-        </label>
-        <div className="relative">
-          <input 
-            name="cc-number" 
-            required 
-            value={ccNumber}
-            onChange={handleCcChange}
-            placeholder="XXXX XXXX XXXX XXXX"
-            className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan" 
-          />
-        </div>
-      </div>
+          <div className="overflow-hidden">
+            <div className={`transition-all duration-500 ease-in-out font-mono text-sm border-l-2 ${paymentMethod === 'credit_card' ? 'border-cyan-glow bg-cyan-glow/5 p-4 mt-4 opacity-100 max-h-40' : 'border-transparent bg-transparent p-0 m-0 opacity-0 max-h-0'}`}>
+              <span className="text-cyan-glow">INFO:</span> Standard fiat currency transfer via secure uplink. Supports Visa, Mastercard, Amex, and Discover networks.
+            </div>
+            
+            <div className={`transition-all duration-500 ease-in-out font-mono text-sm border-l-2 ${paymentMethod === 'crypto' ? 'border-crimson bg-crimson/5 p-4 mt-4 opacity-100 max-h-40' : 'border-transparent bg-transparent p-0 m-0 opacity-0 max-h-0'}`}>
+              <span className="text-crimson">INFO:</span> Untraceable decentralized transfer utilizing the Nukecoin blockchain. Requires external wallet synchronization.
+            </div>
+          </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Valid Thru</label>
-          <input 
-            name="cc-expiration" 
-            required 
-            value={ccExp}
-            onChange={handleExpChange}
-            placeholder="MM / YY" 
-            className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan" 
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Security Code</label>
-          <input name="cc-cvv" required maxLength={4} className="w-full bg-obsidian border border-obsidian-border rounded-none px-4 py-3 text-cyan-glow font-mono focus:border-cyan-glow focus:outline-none focus:ring-1 focus:ring-cyan-glow transition-colors box-shadow-cyan" />
-        </div>
-      </div>
+          <button 
+            type="submit" 
+            disabled={isProcessing}
+            className="w-full mt-8 py-4 tactical-border bg-cyan-glow/10 border border-cyan-glow text-cyan-glow font-bold uppercase tracking-[0.2em] hover:bg-cyan-glow hover:text-obsidian hover:box-shadow-cyan transition-all duration-300 disabled:opacity-50"
+          >
+            {isProcessing ? (
+              <span className="flex items-center justify-center gap-3">
+                <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                PREPARING UPLINK...
+              </span>
+            ) : 'Proceed to Payment'}
+          </button>
 
-          <SubmitButton loadingText="Authorizing Transfer..." className="w-full mt-8 py-4 tactical-border bg-cyan-glow/10 border border-cyan-glow text-cyan-glow font-bold uppercase tracking-[0.2em] hover:bg-cyan-glow hover:text-obsidian hover:box-shadow-cyan transition-all duration-300">
-            Authorize Transfer
-          </SubmitButton>
         </form>
       </div>
 

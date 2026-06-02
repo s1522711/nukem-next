@@ -5,10 +5,16 @@ import Link from 'next/link'
 import { logout } from '@/app/actions/auth'
 import { SessionPayload } from '@/lib/session'
 import { useCart } from './CartProvider'
+import { usePathname } from 'next/navigation'
 
 export function Navbar({ session }: { session: SessionPayload | null }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { totalItems, setIsCartOpen } = useCart()
+  const pathname = usePathname()
+
+  if (pathname === '/checkout/payment') {
+    return null
+  }
 
   return (
     <header className="sticky top-0 z-40 w-full bg-obsidian-light/95 border-b-2 border-cyan-glow/30 shadow-[0_4px_20px_rgba(0,240,255,0.1)]">
