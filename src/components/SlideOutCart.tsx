@@ -1,11 +1,26 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useCart } from './CartProvider'
 import Link from 'next/link'
 
 export function SlideOutCart() {
   const { items, isCartOpen, setIsCartOpen, removeFromCart, updateQuantity, totalPrice, subtotal, shippingFee } = useCart()
+  const [processingAction, setProcessingAction] = useState<string | null>(null)
+
+  const handleRemove = async (itemCode: string) => {
+    setProcessingAction(`remove-${itemCode}`)
+    await new Promise(r => setTimeout(r, 400))
+    removeFromCart(itemCode)
+    setProcessingAction(null)
+  }
+
+  const handleUpdate = async (itemCode: string, newQty: number) => {
+    setProcessingAction(`update-${itemCode}`)
+    await new Promise(r => setTimeout(r, 400))
+    updateQuantity(itemCode, newQty)
+    setProcessingAction(null)
+  }
 
   return (
     <>
@@ -54,26 +69,41 @@ export function SlideOutCart() {
                   <div className="flex justify-between items-start">
                     <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider leading-tight pr-4">{item.itemName}</h3>
                     <button 
-                      onClick={() => removeFromCart(item.itemCode)}
-                      className="text-slate-500 hover:text-crimson"
+                      onClick={() => handleRemove(item.itemCode)}
+                      disabled={processingAction === `remove-${item.itemCode}`}
+                      className="text-slate-500 hover:text-crimson disabled:opacity-50"
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                      </svg>
+                      {processingAction === `remove-${item.itemCode}` ? (
+                        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block"></span>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      )}
                     </button>
                   </div>
                   <div className="text-cyan-glow font-bold tracking-widest">${item.price.toLocaleString()}</div>
                   <div className="flex items-center gap-2 mt-2">
                     <button 
-                      onClick={() => updateQuantity(item.itemCode, item.quantity - 1)}
-                      className="w-6 h-6 flex items-center justify-center bg-obsidian border border-obsidian-border text-slate-400 hover:text-cyan-glow hover:border-cyan-glow transition-colors"
-                    >-</button>
+                      onClick={() => handleUpdate(item.itemCode, item.quantity - 1)}
+                      disabled={processingAction === `update-${item.itemCode}`}
+                      className="w-6 h-6 flex items-center justify-center bg-obsidian border border-obsidian-border text-slate-400 hover:text-cyan-glow hover:border-cyan-glow transition-colors disabled:opacity-50"
+                    >
+                      {processingAction === `update-${item.itemCode}` ? (
+                        <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                      ) : '-'}
+                    </button>
                     <span className="font-mono text-sm w-4 text-center">{item.quantity}</span>
                     <button 
-                      onClick={() => updateQuantity(item.itemCode, item.quantity + 1)}
-                      className="w-6 h-6 flex items-center justify-center bg-obsidian border border-obsidian-border text-slate-400 hover:text-cyan-glow hover:border-cyan-glow transition-colors"
-                    >+</button>
+                      onClick={() => handleUpdate(item.itemCode, item.quantity + 1)}
+                      disabled={processingAction === `update-${item.itemCode}`}
+                      className="w-6 h-6 flex items-center justify-center bg-obsidian border border-obsidian-border text-slate-400 hover:text-cyan-glow hover:border-cyan-glow transition-colors disabled:opacity-50"
+                    >
+                      {processingAction === `update-${item.itemCode}` ? (
+                        <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                      ) : '+'}
+                    </button>
                   </div>
                 </div>
               </div>

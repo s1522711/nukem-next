@@ -3,6 +3,7 @@ import { getSession } from '@/lib/session'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ClearCartEffect } from '@/components/ClearCartEffect'
+import { LaunchButton } from '@/components/LaunchButton'
 
 export default async function CheckoutConfirmedPage({ searchParams }: { searchParams: { orderId?: string } }) {
   const session = await getSession()
@@ -104,13 +105,7 @@ export default async function CheckoutConfirmedPage({ searchParams }: { searchPa
                       <span className="text-cyan-glow/70 font-mono text-xs">ID: {item.itemCode} // ${(item.price * item.quantity).toLocaleString()}</span>
                     </div>
                     {isHighYield && (
-                      <Link 
-                        href={`/checkout/launch?orderId=${order.id}&itemCode=${item.itemCode}`}
-                        className="inline-flex items-center gap-2 py-2 px-6 bg-crimson/20 border border-crimson text-crimson font-bold uppercase tracking-[0.2em] hover:bg-crimson hover:text-obsidian hover:box-shadow-crimson transition-all duration-300 text-xs shrink-0"
-                      >
-                        <span className="w-2 h-2 bg-crimson animate-pulse"></span>
-                        LAUNCH
-                      </Link>
+                      <LaunchButton href={`/checkout/launch?orderId=${order.id}&itemCode=${item.itemCode}`} />
                     )}
                   </div>
                 )

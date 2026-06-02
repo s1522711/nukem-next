@@ -1,11 +1,26 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useCart } from '@/components/CartProvider'
 import Link from 'next/link'
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, totalPrice, subtotal, shippingFee } = useCart()
+  const [processingAction, setProcessingAction] = useState<string | null>(null)
+
+  const handleRemove = async (itemCode: string) => {
+    setProcessingAction(`remove-${itemCode}`)
+    await new Promise(r => setTimeout(r, 400))
+    removeFromCart(itemCode)
+    setProcessingAction(null)
+  }
+
+  const handleUpdate = async (itemCode: string, newQty: number) => {
+    setProcessingAction(`update-${itemCode}`)
+    await new Promise(r => setTimeout(r, 400))
+    updateQuantity(itemCode, newQty)
+    setProcessingAction(null)
+  }
 
   return (
     <div className="container mx-auto px-4 py-16 max-w-5xl">
@@ -45,13 +60,18 @@ export default function CartPage() {
                       <div className="text-xs text-slate-500 font-mono">ID: {item.itemCode}</div>
                     </div>
                     <button 
-                      onClick={() => removeFromCart(item.itemCode)}
-                      className="text-slate-500 hover:text-crimson transition-colors"
+                      onClick={() => handleRemove(item.itemCode)}
+                      disabled={processingAction === `remove-${item.itemCode}`}
+                      className="text-slate-500 hover:text-crimson transition-colors disabled:opacity-50"
                     >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                      </svg>
+                      {processingAction === `remove-${item.itemCode}` ? (
+                        <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin inline-block"></span>
+                      ) : (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      )}
                     </button>
                   </div>
                   
@@ -59,14 +79,24 @@ export default function CartPage() {
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">QTY</span>
                       <button 
-                        onClick={() => updateQuantity(item.itemCode, item.quantity - 1)}
-                        className="w-8 h-8 flex items-center justify-center bg-obsidian border border-obsidian-border text-slate-400 hover:text-cyan-glow hover:border-cyan-glow transition-colors font-mono"
-                      >-</button>
+                        onClick={() => handleUpdate(item.itemCode, item.quantity - 1)}
+                        disabled={processingAction === `update-${item.itemCode}`}
+                        className="w-8 h-8 flex items-center justify-center bg-obsidian border border-obsidian-border text-slate-400 hover:text-cyan-glow hover:border-cyan-glow transition-colors font-mono disabled:opacity-50"
+                      >
+                        {processingAction === `update-${item.itemCode}` ? (
+                          <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                        ) : '-'}
+                      </button>
                       <span className="font-mono text-lg w-6 text-center">{item.quantity}</span>
                       <button 
-                        onClick={() => updateQuantity(item.itemCode, item.quantity + 1)}
-                        className="w-8 h-8 flex items-center justify-center bg-obsidian border border-obsidian-border text-slate-400 hover:text-cyan-glow hover:border-cyan-glow transition-colors font-mono"
-                      >+</button>
+                        onClick={() => handleUpdate(item.itemCode, item.quantity + 1)}
+                        disabled={processingAction === `update-${item.itemCode}`}
+                        className="w-8 h-8 flex items-center justify-center bg-obsidian border border-obsidian-border text-slate-400 hover:text-cyan-glow hover:border-cyan-glow transition-colors font-mono disabled:opacity-50"
+                      >
+                        {processingAction === `update-${item.itemCode}` ? (
+                          <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                        ) : '+'}
+                      </button>
                     </div>
                     <div className="text-xl font-bold text-cyan-glow tracking-widest">
                       ${(item.price * item.quantity).toLocaleString()}
