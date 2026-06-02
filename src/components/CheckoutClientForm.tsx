@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { processCheckout } from '@/app/actions/checkout'
 import { useCart } from './CartProvider'
+import { SubmitButton } from './SubmitButton'
 
 const COUNTRIES = [
   { code: 'AF', name: 'Afghanistan' }, { code: 'AL', name: 'Albania' }, { code: 'DZ', name: 'Algeria' },
@@ -219,9 +220,9 @@ export function CheckoutClientForm() {
         </div>
       </div>
 
-          <button type="submit" className="w-full mt-8 py-4 tactical-border bg-cyan-glow/10 border border-cyan-glow text-cyan-glow font-bold uppercase tracking-[0.2em] hover:bg-cyan-glow hover:text-obsidian hover:box-shadow-cyan transition-all duration-300">
+          <SubmitButton loadingText="Authorizing Transfer..." className="w-full mt-8 py-4 tactical-border bg-cyan-glow/10 border border-cyan-glow text-cyan-glow font-bold uppercase tracking-[0.2em] hover:bg-cyan-glow hover:text-obsidian hover:box-shadow-cyan transition-all duration-300">
             Authorize Transfer
-          </button>
+          </SubmitButton>
         </form>
       </div>
 

@@ -10,6 +10,7 @@ function computeSha256Hash(rawData: string) {
 }
 
 export async function login(formData: FormData) {
+  await new Promise<void>(resolve => setTimeout(resolve, 800))
   const username = formData.get('username') as string
   const password = formData.get('password') as string
 
@@ -35,6 +36,7 @@ export async function login(formData: FormData) {
 }
 
 export async function register(formData: FormData) {
+  await new Promise<void>(resolve => setTimeout(resolve, 800))
   const username = formData.get('username') as string
   const password = formData.get('password') as string
   const confirmPassword = formData.get('confirm-password') as string
@@ -82,6 +84,7 @@ export async function register(formData: FormData) {
 }
 
 export async function logout() {
+  await new Promise<void>(resolve => setTimeout(resolve, 800))
   await deleteSession()
   redirect('/')
 }

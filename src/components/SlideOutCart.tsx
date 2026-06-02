@@ -7,15 +7,16 @@ import Link from 'next/link'
 export function SlideOutCart() {
   const { items, isCartOpen, setIsCartOpen, removeFromCart, updateQuantity, totalPrice, subtotal, shippingFee } = useCart()
 
-  if (!isCartOpen) return null
-
   return (
     <>
       <div 
-        className="fixed inset-0 bg-obsidian/80 backdrop-blur-sm z-50 transition-opacity"
+        className={`fixed inset-0 bg-obsidian/80 backdrop-blur-sm z-50 transition-opacity duration-300 ${isCartOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsCartOpen(false)}
       ></div>
-      <div className="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-obsidian-light border-l border-cyan-glow/50 z-50 transform transition-transform duration-300 flex flex-col shadow-[-10px_0_30px_rgba(0,240,255,0.1)]">
+      <div 
+        className={`fixed top-0 right-0 h-full w-full sm:w-[450px] bg-obsidian-light border-l border-cyan-glow/50 z-50 transition-transform duration-500 ease-in-out flex flex-col shadow-[-10px_0_30px_rgba(0,240,255,0.1)] ${isCartOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        style={{ transform: isCartOpen ? 'translateX(0)' : 'translateX(120%)' }}
+      >
         
         <div className="flex items-center justify-between p-6 border-b border-obsidian-border bg-obsidian">
           <div className="flex items-center gap-3">

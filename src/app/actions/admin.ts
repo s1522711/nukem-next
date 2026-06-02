@@ -3,6 +3,9 @@
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/session'
 import { revalidatePath } from 'next/cache'
+import { writeFile, mkdir, unlink } from 'fs/promises'
+import { join } from 'path'
+import { existsSync } from 'fs'
 
 async function checkAdmin() {
   const session = await getSession()
@@ -12,6 +15,7 @@ async function checkAdmin() {
 }
 
 export async function deleteUser(formData: FormData) {
+  await new Promise<void>(resolve => setTimeout(resolve, 800))
   await checkAdmin()
   const userId = parseInt(formData.get('userId') as string, 10)
   
@@ -24,6 +28,7 @@ export async function deleteUser(formData: FormData) {
 }
 
 export async function toggleAdmin(formData: FormData) {
+  await new Promise<void>(resolve => setTimeout(resolve, 800))
   await checkAdmin()
   const userId = parseInt(formData.get('userId') as string, 10)
   const currentAdmin = formData.get('currentAdmin') === 'true'
@@ -38,20 +43,30 @@ export async function toggleAdmin(formData: FormData) {
 }
 
 export async function deleteItem(formData: FormData) {
+  await new Promise<void>(resolve => setTimeout(resolve, 800))
   await checkAdmin()
   const itemId = parseInt(formData.get('itemId') as string, 10)
   
   if (itemId) {
+    const item = await prisma.item.findUnique({ where: { id: itemId } })
+    if (item && item.imageLocation?.startsWith('/img/products/')) {
+      try {
+        const filePath = join(process.cwd(), 'public', item.imageLocation)
+        if (existsSync(filePath)) {
+          await unlink(filePath)
+        }
+      } catch (e) {
+        console.error('Failed to delete image file:', e)
+      }
+    }
+
     await prisma.item.delete({ where: { id: itemId } })
     revalidatePath('/admin')
   }
 }
 
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
-
 export async function addItem(formData: FormData) {
+  await new Promise<void>(resolve => setTimeout(resolve, 800))
   await checkAdmin()
   
   const itemCode = formData.get('itemCode') as string

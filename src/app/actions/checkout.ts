@@ -5,6 +5,7 @@ import { getSession } from '@/lib/session'
 import { redirect } from 'next/navigation'
 
 export async function processCheckout(formData: FormData) {
+  await new Promise<void>(resolve => setTimeout(resolve, 800))
   const session = await getSession()
   const cartItemsStr = formData.get('cartItems') as string
 

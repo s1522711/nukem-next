@@ -1,4 +1,5 @@
 import { login } from '@/app/actions/auth'
+import { SubmitButton } from '@/components/SubmitButton'
 
 export default async function LoginPage({ searchParams }: { searchParams: { error?: string } }) {
   const sp = await searchParams
@@ -45,9 +46,9 @@ export default async function LoginPage({ searchParams }: { searchParams: { erro
             />
           </div>
 
-          <button type="submit" className="w-full mt-8 py-4 tactical-border-sm bg-cyan-glow/10 border border-cyan-glow text-cyan-glow font-bold uppercase tracking-[0.2em] hover:bg-cyan-glow hover:text-obsidian hover:box-shadow-cyan transition-all duration-300">
+          <SubmitButton loadingText="Establishing..." className="w-full mt-8 py-4 tactical-border-sm bg-cyan-glow/10 border border-cyan-glow text-cyan-glow font-bold uppercase tracking-[0.2em] hover:bg-cyan-glow hover:text-obsidian hover:box-shadow-cyan transition-all duration-300">
             Establish Connection
-          </button>
+          </SubmitButton>
         </form>
       </div>
     </div>
