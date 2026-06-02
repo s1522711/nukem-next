@@ -114,7 +114,7 @@ export function CheckoutClientForm() {
     setCcExp(val)
   }
 
-  const { items, totalPrice } = useCart()
+  const { items, totalPrice, subtotal, shippingFee } = useCart()
   const [mounted, setMounted] = useState(false)
   
   useEffect(() => {
@@ -239,6 +239,17 @@ export function CheckoutClientForm() {
                 <span className="text-cyan-glow">${(item.price * item.quantity).toLocaleString()}</span>
               </div>
             ))}
+          </div>
+
+          <div className="space-y-2 font-mono text-sm border-t border-obsidian-border pt-4">
+            <div className="flex justify-between items-center text-slate-300">
+              <span>Subtotal</span>
+              <span>${subtotal.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-300">
+              <span>Logistics/Transport</span>
+              <span className="text-cyan-glow">${shippingFee.toLocaleString()}</span>
+            </div>
           </div>
 
           <div className="border-t border-cyan-glow/20 pt-4 mt-4 flex justify-between items-center text-lg font-bold text-slate-100 uppercase tracking-widest">

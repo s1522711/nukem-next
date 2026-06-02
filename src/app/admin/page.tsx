@@ -96,8 +96,21 @@ export default async function AdminDashboard() {
                     <td className="px-6 py-4 text-cyan-glow/50">#{o.id}</td>
                     <td className="px-6 py-4 text-slate-400">{o.createdAt.toLocaleDateString()}</td>
                     <td className="px-6 py-4 uppercase">{o.name}</td>
-                    <td className="px-6 py-4 font-bold text-cyan-glow truncate max-w-[200px]" title={o.items.map(i => `${i.quantity}x ${i.itemName}`).join(', ')}>
-                      {o.items.length} items
+                    <td className="px-6 py-4">
+                      <details className="cursor-pointer group/details">
+                        <summary className="font-bold text-cyan-glow hover:text-white transition-colors list-none outline-none flex items-center gap-2 select-none">
+                          <span className="w-2 h-2 bg-cyan-glow group-open/details:bg-crimson transition-colors"></span>
+                          {o.items.length} Asset{o.items.length !== 1 && 's'}
+                        </summary>
+                        <div className="mt-4 space-y-2 border-l border-cyan-glow/30 pl-4 py-2 min-w-[200px]">
+                          {o.items.map(i => (
+                            <div key={i.id} className="flex justify-between items-center text-xs text-slate-300">
+                              <span className="truncate mr-4">{i.quantity}x {i.itemName}</span>
+                              <span className="text-cyan-glow/70 font-mono">${(i.price * i.quantity).toLocaleString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
                     </td>
                     <td className="px-6 py-4">${o.total.toLocaleString()}</td>
                     <td className="px-6 py-4 text-slate-400">{o.country}</td>

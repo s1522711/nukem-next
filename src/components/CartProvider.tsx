@@ -18,6 +18,8 @@ type CartContextType = {
   clearCart: () => void
   totalItems: number
   totalPrice: number
+  subtotal: number
+  shippingFee: number
   isCartOpen: boolean
   setIsCartOpen: (open: boolean) => void
 }
@@ -83,7 +85,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const totalItems = items.reduce((acc, i) => acc + i.quantity, 0)
-  const totalPrice = items.reduce((acc, i) => acc + i.price * i.quantity, 0)
+  const subtotal = items.reduce((acc, i) => acc + i.price * i.quantity, 0)
+  const shippingFee = items.length > 0 ? 100 : 0
+  const totalPrice = subtotal + shippingFee
 
   return (
     <CartContext.Provider
@@ -95,6 +99,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         clearCart,
         totalItems,
         totalPrice,
+        subtotal,
+        shippingFee,
         isCartOpen,
         setIsCartOpen,
       }}

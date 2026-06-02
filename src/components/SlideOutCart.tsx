@@ -5,7 +5,7 @@ import { useCart } from './CartProvider'
 import Link from 'next/link'
 
 export function SlideOutCart() {
-  const { items, isCartOpen, setIsCartOpen, removeFromCart, updateQuantity, totalPrice } = useCart()
+  const { items, isCartOpen, setIsCartOpen, removeFromCart, updateQuantity, totalPrice, subtotal, shippingFee } = useCart()
 
   if (!isCartOpen) return null
 
@@ -81,7 +81,17 @@ export function SlideOutCart() {
         </div>
 
         <div className="p-6 bg-obsidian border-t border-obsidian-border">
-          <div className="flex justify-between items-center mb-6">
+          <div className="space-y-2 mb-4 font-mono text-xs">
+            <div className="flex justify-between items-center text-slate-300">
+              <span>Subtotal</span>
+              <span>${subtotal.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-300">
+              <span>Logistics (Shipping)</span>
+              <span className="text-cyan-glow">${shippingFee.toLocaleString()}</span>
+            </div>
+          </div>
+          <div className="flex justify-between items-center mb-6 pt-4 border-t border-cyan-glow/20">
             <span className="text-slate-400 font-mono text-sm uppercase tracking-widest">Total Valuation</span>
             <span className="text-2xl font-bold text-cyan-glow drop-shadow-[0_0_8px_rgba(0,240,255,0.5)]">
               ${totalPrice.toLocaleString()}

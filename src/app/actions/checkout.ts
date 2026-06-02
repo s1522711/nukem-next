@@ -62,6 +62,10 @@ export async function processCheckout(formData: FormData) {
       quantity: ci.quantity
     })
   }
+  
+  if (cartItems.length > 0) {
+    total += 100 // Add $100 Logistics/Shipping Fee
+  }
 
   const order = await prisma.order.create({
     data: {

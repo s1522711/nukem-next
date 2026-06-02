@@ -5,7 +5,7 @@ import { useCart } from '@/components/CartProvider'
 import Link from 'next/link'
 
 export default function CartPage() {
-  const { items, removeFromCart, updateQuantity, totalPrice } = useCart()
+  const { items, removeFromCart, updateQuantity, totalPrice, subtotal, shippingFee } = useCart()
 
   return (
     <div className="container mx-auto px-4 py-16 max-w-5xl">
@@ -87,11 +87,11 @@ export default function CartPage() {
               <div className="space-y-4 mb-6 text-sm font-mono">
                 <div className="flex justify-between items-center text-slate-300">
                   <span>Subtotal</span>
-                  <span>${totalPrice.toLocaleString()}</span>
+                  <span>${subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center text-slate-300">
                   <span>Logistics/Transport</span>
-                  <span className="text-cyan-glow">SECURE_LINK</span>
+                  <span className="text-cyan-glow">${shippingFee.toLocaleString()}</span>
                 </div>
               </div>
 
