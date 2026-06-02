@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
-export function MissileSim({ orderId, itemName }: { orderId: number, itemName: string }) {
+export function MissileSim({ orderId, itemName, quantity = 1 }: { orderId: number, itemName: string, quantity?: number }) {
   const router = useRouter()
   
   const [targetCoords, setTargetCoords] = useState<{x: number, y: number} | null>(null)
-  const [activeSub, setActiveSub] = useState<{id: number, x: number, y: number} | null>(null)
+  const [activeLaunches, setActiveLaunches] = useState<{id: number, x: number, y: number}[]>([])
   const [phase, setPhase] = useState<'AWAITING' | 'LAUNCHED' | 'IMPACT' | 'DESTROYED'>('AWAITING')
   const [altitude, setAltitude] = useState(0)
 
@@ -89,12 +89,21 @@ export function MissileSim({ orderId, itemName }: { orderId: number, itemName: s
       validSpawns = [furthest]
     }
 
-    // Pick random sub from valid fleet
-    const randomSub = validSpawns[Math.floor(Math.random() * validSpawns.length)]
+    // Pick random subs from valid fleet
+    const launches = []
+    const available = [...validSpawns]
+    for (let i = 0; i < quantity; i++) {
+      if (available.length > 0) {
+        const idx = Math.floor(Math.random() * available.length)
+        launches.push(available[idx])
+        available.splice(idx, 1) // Remove so we pick different subs if possible
+      } else {
+        // If we need more nukes than valid subs, reuse random valid subs
+        launches.push(validSpawns[Math.floor(Math.random() * validSpawns.length)])
+      }
+    }
     
-    // Lock the active sub
-    setActiveSub(randomSub)
-
+    setActiveLaunches(launches)
     setPhase('LAUNCHED')
   }
 
@@ -171,7 +180,8 @@ export function MissileSim({ orderId, itemName }: { orderId: number, itemName: s
 
         {/* Submarine Fleet Idle Locations */}
         {subFleet.map(sub => {
-          const isActive = activeSub?.id === sub.id;
+          const launchCount = activeLaunches.filter(l => l.id === sub.id).length;
+          const isActive = launchCount > 0;
           return (
             <g key={sub.id} transform={`translate(${sub.x}, ${sub.y})`}>
               {isActive ? (
@@ -179,7 +189,7 @@ export function MissileSim({ orderId, itemName }: { orderId: number, itemName: s
                   <circle cx="0" cy="0" r="10" fill="none" stroke="#fff" strokeWidth="2" className="animate-pulse" />
                   <circle cx="0" cy="0" r="2" fill="#fff" />
                   <text x="15" y="5" fill="#fff" fontSize="12" fontFamily="monospace" className="tracking-widest">
-                    SSBN_LAUNCH_DETECTED
+                    SSBN_LAUNCH_DETECTED{launchCount > 1 ? ` (x${launchCount})` : ''}
                   </text>
                 </>
               ) : (
@@ -203,28 +213,33 @@ export function MissileSim({ orderId, itemName }: { orderId: number, itemName: s
           </g>
         )}
 
-        {/* Missile Trajectory */}
-        {phase === 'LAUNCHED' && activeSub && targetCoords && (
-          <g>
-            <path 
-              d={`M ${activeSub.x} ${activeSub.y} Q ${(activeSub.x + targetCoords.x) / 2} ${(activeSub.y + targetCoords.y) / 2 - 200} ${targetCoords.x} ${targetCoords.y}`} 
-              fill="none" 
-              stroke="#ef4444" 
-              strokeWidth="2" 
-              strokeDasharray="5,5"
-              className="animate-pulse opacity-50"
-            />
-            {/* Animated Payload */}
-            <circle cx="0" cy="0" r="4" fill="#ef4444" filter="drop-shadow(0 0 4px #ef4444)">
-              <animateMotion 
-                dur="8s" 
-                repeatCount="1" 
-                path={`M ${activeSub.x} ${activeSub.y} Q ${(activeSub.x + targetCoords.x) / 2} ${(activeSub.y + targetCoords.y) / 2 - 200} ${targetCoords.x} ${targetCoords.y}`}
-                fill="freeze"
+        {/* Missile Trajectories */}
+        {phase === 'LAUNCHED' && targetCoords && activeLaunches.map((sub, index) => {
+          // Calculate trajectory curve variance so multiple missiles from the same origin don't overlap entirely
+          const varianceX = (index % 3 - 1) * 40;
+          const varianceY = (index % 2) * 50;
+          const pathD = `M ${sub.x} ${sub.y} Q ${(sub.x + targetCoords.x) / 2 + varianceX} ${(sub.y + targetCoords.y) / 2 - 200 + varianceY} ${targetCoords.x} ${targetCoords.y}`;
+          return (
+            <g key={index}>
+              <path 
+                d={pathD} 
+                fill="none" 
+                stroke="#ef4444" 
+                strokeWidth="2" 
+                strokeDasharray="5,5"
+                className="animate-pulse opacity-50"
               />
-            </circle>
-          </g>
-        )}
+              <circle cx="0" cy="0" r="4" fill="#ef4444" filter="drop-shadow(0 0 4px #ef4444)">
+                <animateMotion 
+                  dur="8s" 
+                  repeatCount="1" 
+                  path={pathD}
+                  fill="freeze"
+                />
+              </circle>
+            </g>
+          )
+        })}
 
         {/* Impact Explosion */}
         {(phase === 'IMPACT' || phase === 'DESTROYED') && targetCoords && (
@@ -250,7 +265,7 @@ export function MissileSim({ orderId, itemName }: { orderId: number, itemName: s
           </div>
           <div className="text-cyan-glow font-mono text-sm mb-2 flex justify-between gap-8">
             <span>PAYLOAD:</span>
-            <span>{itemName}</span>
+            <span>{quantity}x {itemName}</span>
           </div>
           <div className="text-cyan-glow font-mono text-sm flex justify-between gap-8">
             <span>STATUS:</span>
@@ -320,7 +335,7 @@ export function MissileSim({ orderId, itemName }: { orderId: number, itemName: s
             </div>
             <h2 className="text-4xl font-black text-crimson mb-4 tracking-[0.2em]">TARGET DESTROYED</h2>
             <p className="text-slate-300 font-mono mb-8">
-              Order #{orderId} successfully delivered. The blast radius covers approximately 50km. Have a nice day.
+              Order #{orderId} successfully delivered. {quantity > 1 ? 'Multiple strategic impacts confirmed.' : 'The blast radius covers approximately 50km.'} Have a nice day.
             </p>
             <button 
               onClick={() => router.push(`/checkout/confirmed?orderId=${orderId}`)}

@@ -3,24 +3,31 @@ import { getSession } from '@/lib/session'
 import { redirect } from 'next/navigation'
 import { MissileSim } from '@/components/MissileSim'
 
-export default async function LaunchControlPage({ searchParams }: { searchParams: { orderId?: string } }) {
+export default async function LaunchControlPage({ searchParams }: { searchParams: { orderId?: string, itemCode?: string } }) {
   const session = await getSession()
   if (!session) redirect('/login')
 
   const sp = await searchParams
   const orderId = parseInt(sp.orderId || '0', 10)
-  if (!orderId) redirect('/')
+  const itemCode = sp.itemCode
+  if (!orderId || !itemCode) redirect('/')
 
-  const order = await prisma.order.findUnique({ where: { id: orderId } })
+  const order = await prisma.order.findUnique({ 
+    where: { id: orderId },
+    include: { items: true }
+  })
   if (!order) redirect('/')
 
   if (order.userId !== session.userId && !session.admin) {
     redirect('/')
   }
 
+  const orderItem = order.items.find(i => i.itemCode === itemCode)
+  if (!orderItem) redirect(`/checkout/confirmed?orderId=${order.id}`)
+
   // Double check it's actually high-yield ordnance
-  const item = await prisma.item.findFirst({ where: { itemName: order.itemName } })
-  if (!item || (item.itemCode !== 'TsarBomba' && item.itemCode !== 'LittleBoy')) {
+  const item = await prisma.item.findUnique({ where: { itemCode } })
+  if (!item || !item.highYield) {
     redirect(`/checkout/confirmed?orderId=${order.id}`)
   }
 
@@ -38,14 +45,14 @@ export default async function LaunchControlPage({ searchParams }: { searchParams
             AWAITING <span className="text-crimson text-shadow-crimson">COORDINATES</span>
           </h1>
           <p className="text-slate-400 font-mono text-sm tracking-widest max-w-2xl mt-4 bg-crimson/10 border border-crimson/30 px-4 py-2">
-            WARNING: YOU HAVE AUTHORIZED A STRATEGIC STRIKE USING [{order.itemName}]. SELECT A TARGET DESIGNATION ON THE TACTICAL GRID TO INITIATE DEPLOYMENT.
+            WARNING: YOU HAVE AUTHORIZED A STRATEGIC STRIKE USING [{orderItem.itemName}]. SELECT A TARGET DESIGNATION ON THE TACTICAL GRID TO INITIATE DEPLOYMENT.
           </p>
         </div>
 
         <div className="flex-grow flex flex-col border border-cyan-glow/30 bg-obsidian-light/50 tactical-border p-1 md:p-4 box-shadow-cyan relative">
           <div className="absolute inset-0 bg-[linear-gradient(rgba(0,240,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,240,255,0.03)_1px,transparent_1px)] bg-[length:20px_20px] pointer-events-none"></div>
           
-          <MissileSim orderId={order.id} itemName={order.itemName} />
+          <MissileSim orderId={order.id} itemName={orderItem.itemName} quantity={orderItem.quantity} />
           
         </div>
 

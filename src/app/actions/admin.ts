@@ -62,6 +62,7 @@ export async function addItem(formData: FormData) {
   const flairTextColorClass = formData.get('flairTextColorClass') as string
   const flairLink = formData.get('flairLink') as string
   const imageFile = formData.get('imageFile') as File
+  const highYield = formData.get('highYield') === 'true'
 
   let imageLocation = '/img/index/tsar-bobma.webp'
 
@@ -91,7 +92,8 @@ export async function addItem(formData: FormData) {
         flairText: flairText || null,
         flairColorClass: flairColorClass || null,
         flairTextColorClass: flairTextColorClass || null,
-        flairLink: flairLink || null
+        flairLink: flairLink || null,
+        highYield
       }
     })
     revalidatePath('/admin')

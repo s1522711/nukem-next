@@ -4,9 +4,11 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { logout } from '@/app/actions/auth'
 import { SessionPayload } from '@/lib/session'
+import { useCart } from './CartProvider'
 
 export function Navbar({ session }: { session: SessionPayload | null }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { totalItems, setIsCartOpen } = useCart()
 
   return (
     <header className="sticky top-0 z-40 w-full bg-obsidian-light/95 border-b-2 border-cyan-glow/30 shadow-[0_4px_20px_rgba(0,240,255,0.1)]">
@@ -65,6 +67,19 @@ export function Navbar({ session }: { session: SessionPayload | null }) {
               </>
             )}
           </div>
+
+          {/* Cart Toggle */}
+          <button 
+            onClick={() => setIsCartOpen(true)}
+            className="relative flex items-center justify-center w-10 h-10 border border-obsidian-border bg-obsidian-light/50 hover:border-cyan-glow hover:bg-cyan-glow/10 transition-all duration-300 group ml-2"
+          >
+            <svg className="w-5 h-5 text-slate-400 group-hover:text-cyan-glow transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            {totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 w-5 h-5 bg-crimson text-white text-[10px] font-bold flex items-center justify-center rounded-full animate-pulse-fast box-shadow-crimson border border-obsidian">
+                {totalItems}
+              </span>
+            )}
+          </button>
 
           {/* Mobile Menu Toggle Button */}
           <button 

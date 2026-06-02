@@ -13,6 +13,7 @@ type Item = {
   flairColorClass: string | null
   flairTextColorClass: string | null
   flairLink: string | null
+  highYield: boolean
 }
 
 const COLOR_CLASSES = [
@@ -84,6 +85,7 @@ export function AdminItemsManager({ items }: { items: Item[] }) {
               <th className="px-6 py-4">Flair Bg</th>
               <th className="px-6 py-4">Flair Color</th>
               <th className="px-6 py-4">Flair Lnk</th>
+              <th className="px-6 py-4">Yield</th>
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -102,6 +104,7 @@ export function AdminItemsManager({ items }: { items: Item[] }) {
                 <td className="px-6 py-4 text-slate-500">{i.flairColorClass || '-'}</td>
                 <td className="px-6 py-4 text-slate-500">{i.flairTextColorClass || '-'}</td>
                 <td className="px-6 py-4 truncate max-w-[100px] text-slate-500">{i.flairLink || '-'}</td>
+                <td className="px-6 py-4 text-cyan-glow font-bold">{i.highYield ? 'HIGH' : '-'}</td>
                 <td className="px-6 py-4 text-right">
                   <form action={deleteItem}>
                     <input type="hidden" name="itemId" value={i.id} />
@@ -174,12 +177,17 @@ export function AdminItemsManager({ items }: { items: Item[] }) {
 
                         <div className="flex-1 flex flex-col">
                           <label className="block text-[10px] font-bold text-cyan-glow/70 mb-2 uppercase tracking-widest">Visual_Schematic_Upload</label>
-                          <div className="relative border border-dashed border-cyan-glow/30 p-4 bg-obsidian flex-1 flex items-center justify-center hover:bg-cyan-glow/5 transition-colors cursor-pointer min-h-[80px]">
+                          <div className="relative border border-dashed border-cyan-glow/30 p-4 bg-obsidian flex-1 flex items-center justify-center hover:bg-cyan-glow/5 transition-colors cursor-pointer min-h-[80px] mb-4">
                             <input name="imageFile" type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                             <div className="text-cyan-glow font-mono text-xs uppercase tracking-widest pointer-events-none text-center">
                               [ CLICK_OR_DRAG_FILE_HERE ]
                             </div>
                           </div>
+                          
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" name="highYield" className="w-4 h-4 bg-obsidian border border-cyan-glow/50 text-cyan-glow focus:ring-cyan-glow/50 accent-cyan-glow" value="true" />
+                            <span className="text-xs font-bold text-crimson uppercase tracking-widest text-shadow-crimson">HIGH-YIELD ORDNANCE</span>
+                          </label>
                         </div>
                       </div>
                     </div>

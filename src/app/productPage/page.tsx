@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { AddToCartButton } from '@/components/AddToCartButton'
 
 const COLOR_CLASSES = [
   { value: 'bg-blue-500', hex: '#3b82f6' },
@@ -118,12 +119,15 @@ export default async function ProductPage({ searchParams }: { searchParams: { it
             </p>
           </div>
           
-          <Link 
-            href={`/checkout?itemCode=${item.itemCode}`}
-            className="inline-flex items-center justify-center w-full py-5 text-xl font-bold tracking-[0.3em] uppercase text-obsidian bg-cyan-glow hover:bg-white transition-all duration-300 tactical-border box-shadow-cyan"
-          >
-            AUTHORIZE ACQUISITION
-          </Link>
+          <AddToCartButton 
+            item={{
+              itemCode: item.itemCode,
+              itemName: item.itemName,
+              price: item.price,
+              imageLocation: item.imageLocation,
+              quantity: 1
+            }} 
+          />
         </div>
       </div>
 

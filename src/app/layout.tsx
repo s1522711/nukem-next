@@ -3,6 +3,8 @@ import { Share_Tech_Mono } from 'next/font/google'
 import './globals.css'
 import { Navbar } from '@/components/Navbar'
 import { getSession } from '@/lib/session'
+import { CartProvider } from '@/components/CartProvider'
+import { SlideOutCart } from '@/components/SlideOutCart'
 
 const shareTech = Share_Tech_Mono({ weight: '400', subsets: ['latin'] })
 
@@ -26,12 +28,15 @@ export default async function RootLayout({
         {/* Scanning beam animation */}
         <div className="pointer-events-none fixed left-0 top-0 w-full h-[10px] bg-cyan-glow/10 blur-sm z-50 animate-scan"></div>
         
-        <div className="relative z-10 flex flex-col min-h-screen">
-          <Navbar session={session} />
-          <main className="flex-grow">
-            {children}
-          </main>
-        </div>
+        <CartProvider>
+          <div className="relative z-10 flex flex-col min-h-screen">
+            <Navbar session={session} />
+            <main className="flex-grow">
+              {children}
+            </main>
+          </div>
+          <SlideOutCart />
+        </CartProvider>
       </body>
     </html>
   )

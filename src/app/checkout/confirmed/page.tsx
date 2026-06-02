@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/session'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { ClearCartEffect } from '@/components/ClearCartEffect'
 
 export default async function CheckoutConfirmedPage({ searchParams }: { searchParams: { orderId?: string } }) {
   const session = await getSession()
@@ -11,7 +12,10 @@ export default async function CheckoutConfirmedPage({ searchParams }: { searchPa
   const orderId = parseInt(sp.orderId || '0', 10)
   if (!orderId) redirect('/')
 
-  const order = await prisma.order.findUnique({ where: { id: orderId } })
+  const order = await prisma.order.findUnique({ 
+    where: { id: orderId },
+    include: { items: true }
+  })
   if (!order) redirect('/')
 
   if (order.userId !== session.userId && !session.admin) {
@@ -21,15 +25,23 @@ export default async function CheckoutConfirmedPage({ searchParams }: { searchPa
   // Create a zero-padded order ID (e.g. 00045)
   const paddedOrderId = orderId.toString().padStart(5, '0')
 
+  // Fetch items to check highYield status
+  const itemCodes = order.items.map(i => i.itemCode)
+  const realItems = await prisma.item.findMany({
+    where: { itemCode: { in: itemCodes } }
+  })
+  
+  const highYieldMap = new Map(realItems.map(i => [i.itemCode, i.highYield]))
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 relative overflow-hidden">
-      
+      <ClearCartEffect />
       {/* Background Watermark */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[150px] md:text-[250px] font-bold text-obsidian-border/20 z-0 select-none tracking-tighter whitespace-nowrap pointer-events-none">
         SECURED
       </div>
 
-      <div className="w-full max-w-3xl bg-obsidian-light/80 border border-cyan-glow/50 p-8 md:p-12 tactical-border shadow-xl animate-fade-in relative z-10 box-shadow-cyan backdrop-blur-md">
+      <div className="w-full max-w-4xl bg-obsidian-light/80 border border-cyan-glow/50 p-8 md:p-12 tactical-border shadow-xl animate-fade-in relative z-10 box-shadow-cyan backdrop-blur-md">
         
         {/* Tactical Brackets */}
         <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-cyan-glow hidden sm:block"></div>
@@ -63,19 +75,46 @@ export default async function CheckoutConfirmedPage({ searchParams }: { searchPa
 
           <div className="bg-obsidian border border-obsidian-border p-6 mb-10 tactical-border-sm relative overflow-hidden">
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-cyan-glow"></div>
-            <div className="space-y-4 font-mono text-sm">
+            <div className="space-y-4 font-mono text-sm mb-6 border-b border-obsidian-border pb-6">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-obsidian-border pb-4 gap-2">
                 <span className="text-slate-500 tracking-widest uppercase text-xs">Tracking_ID</span>
                 <span className="text-cyan-glow font-bold tracking-widest">NUK-ORD-{paddedOrderId}</span>
               </div>
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-obsidian-border pb-4 gap-2">
-                <span className="text-slate-500 tracking-widest uppercase text-xs">Asset_Designation</span>
-                <span className="text-slate-200 tracking-wider uppercase">{order.itemName}</span>
+                <span className="text-slate-500 tracking-widest uppercase text-xs">Total_Valuation</span>
+                <span className="text-cyan-glow font-bold tracking-widest">${order.total.toLocaleString()}</span>
               </div>
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                 <span className="text-slate-500 tracking-widest uppercase text-xs">Current_Status</span>
                 <span className="text-green-400 font-bold tracking-widest animate-pulse">PROCESSING_DEPLOYMENT</span>
               </div>
+            </div>
+
+            <h3 className="text-lg font-bold text-slate-200 tracking-widest uppercase mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 bg-slate-200"></span> Asset Manifest
+            </h3>
+            
+            <div className="space-y-4">
+              {order.items.map(item => {
+                const isHighYield = highYieldMap.get(item.itemCode)
+                return (
+                  <div key={item.id} className="bg-obsidian-light/50 border border-obsidian-border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex flex-col">
+                      <span className="text-slate-200 font-bold uppercase tracking-wider">{item.quantity}x {item.itemName}</span>
+                      <span className="text-cyan-glow/70 font-mono text-xs">ID: {item.itemCode} // ${(item.price * item.quantity).toLocaleString()}</span>
+                    </div>
+                    {isHighYield && (
+                      <Link 
+                        href={`/checkout/launch?orderId=${order.id}&itemCode=${item.itemCode}`}
+                        className="inline-flex items-center gap-2 py-2 px-6 bg-crimson/20 border border-crimson text-crimson font-bold uppercase tracking-[0.2em] hover:bg-crimson hover:text-obsidian hover:box-shadow-crimson transition-all duration-300 text-xs shrink-0"
+                      >
+                        <span className="w-2 h-2 bg-crimson animate-pulse"></span>
+                        LAUNCH
+                      </Link>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
 

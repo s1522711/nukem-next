@@ -40,6 +40,7 @@ async function main() {
       flairColorClass: 'bg-secondary',
       flairTextColorClass: 'text-white',
       flairLink: '#',
+      highYield: true,
     },
     {
       itemCode: 'DukeNukem',
@@ -110,6 +111,7 @@ async function main() {
       flairColorClass: 'bg-primary',
       flairTextColorClass: 'text-white',
       flairLink: '#',
+      highYield: true,
     },
   ]
 

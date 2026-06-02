@@ -17,7 +17,8 @@ export default async function AdminDashboard() {
   })
   
   const orders = await prisma.order.findMany({
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
+    include: { items: true }
   })
   
   const items = await prisma.item.findMany()
@@ -84,8 +85,8 @@ export default async function AdminDashboard() {
                   <th className="px-6 py-4">Tx_ID</th>
                   <th className="px-6 py-4">Timestamp</th>
                   <th className="px-6 py-4">Operative</th>
-                  <th className="px-6 py-4">Asset</th>
-                  <th className="px-6 py-4">Value</th>
+                  <th className="px-6 py-4">Assets</th>
+                  <th className="px-6 py-4">Total Value</th>
                   <th className="px-6 py-4">Sector</th>
                 </tr>
               </thead>
@@ -95,8 +96,10 @@ export default async function AdminDashboard() {
                     <td className="px-6 py-4 text-cyan-glow/50">#{o.id}</td>
                     <td className="px-6 py-4 text-slate-400">{o.createdAt.toLocaleDateString()}</td>
                     <td className="px-6 py-4 uppercase">{o.name}</td>
-                    <td className="px-6 py-4 font-bold text-cyan-glow">{o.itemName}</td>
-                    <td className="px-6 py-4">${o.price.toLocaleString()}</td>
+                    <td className="px-6 py-4 font-bold text-cyan-glow truncate max-w-[200px]" title={o.items.map(i => `${i.quantity}x ${i.itemName}`).join(', ')}>
+                      {o.items.length} items
+                    </td>
+                    <td className="px-6 py-4">${o.total.toLocaleString()}</td>
                     <td className="px-6 py-4 text-slate-400">{o.country}</td>
                   </tr>
                 ))}

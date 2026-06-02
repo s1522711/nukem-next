@@ -11,7 +11,7 @@ export default async function UserCpPage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    include: { orders: { orderBy: { createdAt: 'desc' } } }
+    include: { orders: { orderBy: { createdAt: 'desc' }, include: { items: true } } }
   })
 
   if (!user) {
@@ -65,8 +65,10 @@ export default async function UserCpPage() {
                 {user.orders.map(order => (
                   <tr key={order.id} className="hover:bg-cyan-glow/5 transition-colors group">
                     <td className="px-4 py-4 text-cyan-glow/50">#{order.id}</td>
-                    <td className="px-4 py-4 font-bold group-hover:text-cyan-glow transition-colors">{order.itemName}</td>
-                    <td className="px-4 py-4">${order.price.toLocaleString()}</td>
+                    <td className="px-4 py-4 font-bold group-hover:text-cyan-glow transition-colors truncate max-w-[150px]" title={order.items.map(i => `${i.quantity}x ${i.itemName}`).join(', ')}>
+                      {order.items.length} items
+                    </td>
+                    <td className="px-4 py-4">${order.total.toLocaleString()}</td>
                     <td className="px-4 py-4 text-slate-500">{order.createdAt.toLocaleDateString()}</td>
                     <td className="px-4 py-4">
                       <Link href={`/checkout/confirmed?orderId=${order.id}`} className="text-cyan-glow hover:text-white text-xs uppercase tracking-widest hover:text-shadow-cyan transition-colors">

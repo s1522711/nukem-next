@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { processCheckout } from '@/app/actions/checkout'
+import { useCart } from './CartProvider'
 
 const COUNTRIES = [
   { code: 'AF', name: 'Afghanistan' }, { code: 'AL', name: 'Albania' }, { code: 'DZ', name: 'Algeria' },
@@ -71,7 +72,7 @@ const COUNTRIES = [
   { code: 'ZM', name: 'Zambia' }, { code: 'ZW', name: 'Zimbabwe' }
 ]
 
-export function CheckoutClientForm({ itemCode }: { itemCode: string }) {
+export function CheckoutClientForm() {
   const [ccNumber, setCcNumber] = useState('')
   const [ccExp, setCcExp] = useState('')
   const [cardType, setCardType] = useState<string | null>(null)
@@ -113,9 +114,27 @@ export function CheckoutClientForm({ itemCode }: { itemCode: string }) {
     setCcExp(val)
   }
 
+  const { items, totalPrice } = useCart()
+  const [mounted, setMounted] = useState(false)
+  
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
+  if (items.length === 0) {
+    return (
+      <div className="text-center p-12 bg-obsidian-light/50 border border-obsidian-border text-slate-400 font-mono text-sm tracking-widest uppercase">
+        NO ASSETS SELECTED FOR ACQUISITION.
+      </div>
+    )
+  }
+
   return (
-    <form action={processCheckout} className="space-y-6">
-      <input type="hidden" name="itemCode" value={itemCode} />
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+      <div className="lg:col-span-2 order-2 lg:order-1">
+        <form action={processCheckout} className="space-y-6">
+          <input type="hidden" name="cartItems" value={JSON.stringify(items)} />
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div>
@@ -200,9 +219,34 @@ export function CheckoutClientForm({ itemCode }: { itemCode: string }) {
         </div>
       </div>
 
-      <button type="submit" className="w-full mt-8 py-4 tactical-border bg-cyan-glow/10 border border-cyan-glow text-cyan-glow font-bold uppercase tracking-[0.2em] hover:bg-cyan-glow hover:text-obsidian hover:box-shadow-cyan transition-all duration-300">
-        Authorize Transfer
-      </button>
-    </form>
+          <button type="submit" className="w-full mt-8 py-4 tactical-border bg-cyan-glow/10 border border-cyan-glow text-cyan-glow font-bold uppercase tracking-[0.2em] hover:bg-cyan-glow hover:text-obsidian hover:box-shadow-cyan transition-all duration-300">
+            Authorize Transfer
+          </button>
+        </form>
+      </div>
+
+      <div className="lg:col-span-1 order-1 lg:order-2">
+        <div className="bg-obsidian-light/50 border border-obsidian-border p-6 sticky top-24 tactical-border backdrop-blur-md">
+          <h3 className="text-lg font-bold text-cyan-glow mb-6 tracking-widest uppercase flex items-center gap-2">
+            <span className="w-2 h-2 bg-cyan-glow"></span>
+            Manifest
+          </h3>
+          
+          <div className="space-y-4 mb-4">
+            {items.map(item => (
+              <div key={item.itemCode} className="flex justify-between items-start text-slate-300 font-mono text-sm border-b border-obsidian-border pb-2">
+                <span className="max-w-[150px]">{item.quantity}x {item.itemName}</span>
+                <span className="text-cyan-glow">${(item.price * item.quantity).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-cyan-glow/20 pt-4 mt-4 flex justify-between items-center text-lg font-bold text-slate-100 uppercase tracking-widest">
+            <span>Total</span>
+            <span className="text-cyan-glow drop-shadow-[0_0_8px_rgba(0,240,255,0.5)]">${totalPrice.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
