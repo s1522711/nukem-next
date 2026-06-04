@@ -40,10 +40,10 @@ export async function processCheckout(formData: FormData) {
   if (!lastName || lastName.length < 3 || lastName.length > 50) redirect(`/checkout/payment?error=Invalid+last+name`)
   if (!email || email.length < 3 || email.length > 50 || !email.includes('@') || !email.includes('.')) redirect(`/checkout/payment?error=Invalid+email`)
   if (!country) redirect(`/checkout/payment?error=Please+select+your+country`)
-  
-  const bannedCountries = ['FR', 'GF', 'PF', 'TF', 'DE', 'GI', 'IL', 'PT', 'ES', 'GB']
+
+  const bannedCountries = ['FR', 'GF', 'PF', 'TF', 'DE', 'GI', 'PT', 'ES', 'GB']
   if (bannedCountries.includes(country)) redirect(`/checkout/payment?error=Shipping+to+this+country+is+banned+by+company+policy.`)
-  
+
   if (!address || address.length < 3 || address.length > 50) redirect(`/checkout/payment?error=Invalid+address`)
   if (!zip || zip.length < 3 || zip.length > 50) redirect(`/checkout/payment?error=Invalid+zip`)
 
@@ -75,7 +75,7 @@ export async function processCheckout(formData: FormData) {
       quantity: ci.quantity
     })
   }
-  
+
   if (cartItems.length > 0) {
     total += 100 // Add $100 Logistics/Shipping Fee
   }

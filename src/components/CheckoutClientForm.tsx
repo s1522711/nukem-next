@@ -95,7 +95,7 @@ export function CheckoutClientForm() {
 
   const handleProceed = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
+
     const formData = new FormData(e.currentTarget)
     const firstName = formData.get('firstName') as string
     const lastName = formData.get('lastName') as string
@@ -116,13 +116,13 @@ export function CheckoutClientForm() {
       setError('Invalid email address.')
       return
     }
-    
-    const bannedCountries = ['FR', 'GF', 'PF', 'TF', 'DE', 'GI', 'IL', 'PT', 'ES', 'GB']
+
+    const bannedCountries = ['FR', 'GF', 'PF', 'TF', 'DE', 'GI', 'PT', 'ES', 'GB']
     if (bannedCountries.includes(country)) {
       setError('Shipping to this country is banned by company policy.')
       return
     }
-    
+
     if (!address || address.length < 3 || address.length > 50) {
       setError('Invalid address (must be 3-50 characters).')
       return
@@ -139,7 +139,7 @@ export function CheckoutClientForm() {
 
     setError(null)
     setIsProcessing(true)
-    
+
     const billingData = {
       firstName,
       lastName,
@@ -149,9 +149,9 @@ export function CheckoutClientForm() {
       zip,
       paymentMethod
     }
-    
+
     sessionStorage.setItem('nukem_billing', JSON.stringify(billingData))
-    
+
     await new Promise(r => setTimeout(r, 600))
     router.push('/checkout/payment')
   }
@@ -202,14 +202,14 @@ export function CheckoutClientForm() {
           </div>
 
           <div className="w-full h-px bg-gradient-to-r from-transparent via-cyan-glow/50 to-transparent my-10"></div>
-          
+
           <div className="flex items-center gap-3 mb-6">
             <span className="w-2 h-2 bg-crimson animate-pulse-fast box-shadow-crimson"></span>
             <h3 className="text-xl font-bold text-slate-100 tracking-widest uppercase">Payment Designation</h3>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button 
+            <button
               type="button"
               onClick={() => setPaymentMethod('credit_card')}
               className={`p-4 border transition-all duration-300 flex flex-col items-start gap-2 ${paymentMethod === 'credit_card' ? 'border-cyan-glow bg-cyan-glow/10 box-shadow-cyan' : 'border-obsidian-border bg-obsidian hover:border-cyan-glow/50'}`}
@@ -221,8 +221,8 @@ export function CheckoutClientForm() {
                 </div>
               </div>
             </button>
-            
-            <button 
+
+            <button
               type="button"
               onClick={() => setPaymentMethod('crypto')}
               className={`p-4 border transition-all duration-300 flex flex-col items-start gap-2 ${paymentMethod === 'crypto' ? 'border-cyan-glow bg-cyan-glow/10 box-shadow-cyan' : 'border-obsidian-border bg-obsidian hover:border-cyan-glow/50'}`}
@@ -240,14 +240,14 @@ export function CheckoutClientForm() {
             <div className={`transition-all duration-500 ease-in-out font-mono text-sm border-l-2 ${paymentMethod === 'credit_card' ? 'border-cyan-glow bg-cyan-glow/5 p-4 mt-4 opacity-100 max-h-40' : 'border-transparent bg-transparent p-0 m-0 opacity-0 max-h-0'}`}>
               <span className="text-cyan-glow">INFO:</span> Standard fiat currency transfer via secure uplink. Supports Visa, Mastercard, Amex, and Discover networks.
             </div>
-            
+
             <div className={`transition-all duration-500 ease-in-out font-mono text-sm border-l-2 ${paymentMethod === 'crypto' ? 'border-crimson bg-crimson/5 p-4 mt-4 opacity-100 max-h-40' : 'border-transparent bg-transparent p-0 m-0 opacity-0 max-h-0'}`}>
               <span className="text-crimson">INFO:</span> Untraceable decentralized transfer utilizing the Nukecoin blockchain. Requires external wallet synchronization.
             </div>
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={isProcessing}
             className="w-full mt-8 py-4 tactical-border bg-cyan-glow/10 border border-cyan-glow text-cyan-glow font-bold uppercase tracking-[0.2em] hover:bg-cyan-glow hover:text-obsidian hover:box-shadow-cyan transition-all duration-300 disabled:opacity-50"
           >
@@ -268,7 +268,7 @@ export function CheckoutClientForm() {
             <span className="w-2 h-2 bg-cyan-glow"></span>
             Manifest
           </h3>
-          
+
           <div className="space-y-4 mb-4">
             {items.map(item => (
               <div key={item.itemCode} className="flex justify-between items-start text-slate-300 font-mono text-sm border-b border-obsidian-border pb-2">
